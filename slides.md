@@ -87,13 +87,17 @@ To find the location of your Realm database file, run this code in your program:
 println(RLMRealm.defaultRealm().path)
 ```
 
-In Finder, choose `Go > Go to Folder...` and paste the path into the dialog.
+Then run something like this:
+
+```
+open /Users/fhsu/Library/Developer/CoreSimulator/Devices/.../default.realm
+```
 
 ---
 
 # Creating a model
 
-Just subclass RLMObject:
+Just subclass RLMObject and add some properties:
 
 ```swift
 class Product: RLMObject {
@@ -117,7 +121,7 @@ class Product: RLMObject {
 }
 ```
 
-One possible workaround is to wrap an object inside an RLMObject.
+One possible workaround is to wrap the object inside an RLMObject subclass.
 
 ^ Note that the above compiles, but it will cause your program to crash when you try to run it.
 
@@ -227,7 +231,7 @@ RLMRealm.defaultRealm().transactionWithBlock {
 
 ## Subscribing to database changes
 
-```
+```swift
 let realm = RLMRealm.defaultRealm()
 self.notificationToken = realm.addNotificationBlock {
     notification, realm in
