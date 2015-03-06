@@ -16,9 +16,9 @@ slidenumbers: true
 
 # What is Realm?
 
-Realm is a mobile database for iOS and Android. On iOS, it's meant to be a replacement for Core Data, offering a similar API but with faster performance and a smaller footprint.
+Realm is a mobile database for iOS and Android. On iOS, it's meant to be a replacement for Core Data, offering a similar API but with better performance and a smaller footprint.
 
-![inline](realm-icon.png)
+![inline](images/realm-icon.png)
 
 ---
 
@@ -29,6 +29,21 @@ Three methods:
 - CocoaPods
 - Carthage
 - Manual installation (supports iOS 8 dynamic frameworks)
+
+^ Manual installation and installation via Carthage are both pretty simple, but CocoaPods installation isn't quite straightforward yet.
+
+---
+
+# Installing to a Swift project using CocoaPods
+
+The latest stable release of CocoaPods doesn't support Swift packages, so you need to install the prelease version:
+
+
+```
+gem install cocoapods --pre
+```
+
+^ Source: http://blog.cocoapods.org/Pod-Authors-Guide-to-CocoaPods-Frameworks/
 
 ---
 
@@ -50,17 +65,29 @@ pod 'Realm'
 
 If you don't add `use_frameworks!`, you must create a bridging header for Realm.
 
-You also need to add the `RLMSupport.swift` file into your project. This file contains class extensions for RLMObject, RLMArray, and RLMResults.
+You also need to add the `RLMSupport.swift` file into your project.
 
-^ The `RLMSupport.swift` file cannot be found in the Pods directory. It can be dragged into your project from the `Swift` directory of the Realm download, or you can get it directly from [Github](http://github.com/realm/realm-cocoa/Swift/RLMSupport.swift).
+^ The `RLMSupport.swift` file contains class extensions for RLMObject, RLMArray, and RLMResults. It cannot be found in the Pods directory. It can be dragged into your project from the `Swift` directory of the Realm download, or you can get it directly from [Github](http://github.com/realm/realm-cocoa/Swift/RLMSupport.swift). It may seem weird that a separate Swift source file is needed in addition to the actual framework, but it is part of their effort to maintain support for iOS 7. See http://realm.io/news/realm-0.85.0/.
 
 ---
 
 ## Realm has a snazzy database browser
 
-![fit](realm-browser.png)
+![fit](images/realm-browser.png)
 
 ^ You can use it to inspect and edit your database outside of your app.
+
+---
+
+# Loading your Realm database in the browser
+
+To find the location of your Realm database file, run this code in your program:
+
+```swift
+println(RLMRealm.defaultRealm().path)
+```
+
+In Finder, choose `Go > Go to Folder...` and paste the path into the dialog.
 
 ---
 
@@ -73,7 +100,49 @@ class Product: RLMObject {
     dynamic var name = ""
     dynamic var price = 0.0
     dynamic var rating = -1
-    dynamic var startDate = NSDate()
+    dynamic var startDate = NSDate(timeIntervalSince1970: 0)
+}
+```
+
+---
+
+# Limitation: incomplete support for optionals
+
+This does NOT work:
+
+```swift
+class Product: RLMObject {
+    // ...
+    dynamic var startDate: NSDate?
+}
+```
+
+One possible workaround is to wrap an object inside an RLMObject.
+
+^ Note that the above compiles, but it will cause your program to crash when you try to run it.
+
+---
+
+# Wrapping an object inside RLMObject
+
+You can define a DateBox class that subclasses RLMObject and has a single property of type NSDate:
+
+```swift
+class DateBox: RLMObject {
+    dynamic var value = NSDate(timeIntervalSince1970: 0)
+}
+```
+
+---
+
+# Wrapping an object inside RLMObject (2)
+
+Now you can do this:
+
+```swift
+class Product: RLMObject {
+    // ...
+    dynamic var startDate: DateBox?
 }
 ```
 
@@ -81,7 +150,7 @@ class Product: RLMObject {
 
 # Gotcha: Custom initializers for RLMObject subclasses
 
-You must first add a bunch of annoying boilerplate code:
+If you want to make a custom initializer you'll first need to add this annoying boilerplate to your class definition:
 
 ```swift
 override init() {
@@ -105,12 +174,15 @@ override init(objectSchema: RLMObjectSchema) {
 ## Adding objects to the database
 
 ```swift
+// Using an Array:
 Product.createInRealm(realm, withObject: 
     ["Sais", 44.87, 5, NSDate()])
 
+// Using a Dictionary:
 Product.createInDefaultRealmWithObject(
     ["name": "Sais", "price": 44.87, "rating": 5, "startDate": NSDate()])
 
+// Using a custom initializer:
 realm.addObject(Product(
     name: "Sais", price: 44.87, rating: 5, startDate: "2013-02-28"))
 ```
@@ -149,7 +221,7 @@ RLMRealm.defaultRealm().transactionWithBlock {
 
 ^ In this case, it's because `[RLMRealm transactionBlock:]` expects the closure to return `Void`, but `[Product createInDefaultRealmWithObject:]` instead returns `Product!`.
 
-^ It's also possible to solve this problem by changing the line to `let _ = Product.createInDefaultRealmWithObject([name, 0.0, 3, NSDate()])`, but I don't think that's as clean.
+^ It's also possible to solve this problem by changing the line to `let _ = Product.createInDefaultRealmWithObject([name, 0.0, 3, NSDate()])`. However, I don't think that is a very clean solution.
 
 ---
 
@@ -202,10 +274,12 @@ self.notificationToken = realm.addNotificationBlock {
 
 # Cons
 
-- Still beta (currently at version 0.90.5)
+- Still beta (currently at version 0.90.6)
 - Swift API is a work-in-progress
+- Support for optionals is not great
 - No fine-grained notifications (also no support for KVO)
-- NSDate is truncated to the second
+
+^ Better support for optionals is a priority for the Realm developers: https://github.com/realm/realm-cocoa/issues/628.
 
 ---
 
@@ -215,10 +289,10 @@ http://github.com/feihong/HelloRealm
 
 ---
 
-![fit](HelloRealm.png)
-![fit](HelloRealm-add.png)
-![fit](HelloRealm-delete.png)
-![fit](HelloRealm-dupe.png)
+![fit](images/HelloRealm.png)
+![fit](images/HelloRealm-add.png)
+![fit](images/HelloRealm-delete.png)
+![fit](images/HelloRealm-dupe.png)
 
 ^ Screenshots of the app.
 
@@ -226,9 +300,18 @@ http://github.com/feihong/HelloRealm
 
 # Conclusion
 
-You should give Realm a try!
+Realm is a bit immature right now as it heads toward its first stable release.
+
+But you should give Realm a try if your app's model isn't too hindered by the current limitations.
 
 # http://realm.io 
 
-![left, inline](realm-icon.png) 
+---
+
+# Thank you
+
+Slides (including notes) can be viewed at 
+
+## https://github.com/feihong/realm-talk
+
 
