@@ -2,4 +2,4 @@
 
 A talk about using Realm in Swift
 
-[View the slides](Using Realm with Swift.md)
+[View the slides](slides.md)
