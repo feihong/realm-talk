@@ -234,7 +234,7 @@ RLMRealm.defaultRealm().transactionWithBlock {
 ```swift
 let realm = RLMRealm.defaultRealm()
 self.notificationToken = realm.addNotificationBlock {
-    notification, realm in
+    notification, realm -> Void in
     self.tableView.reloadData()
 }
 ```
@@ -255,13 +255,16 @@ self.notificationToken = realm.addNotificationBlock {
 ```swift
 let realm = RLMRealm.defaultRealm()
 self.notificationToken = realm.addNotificationBlock {
-    [unowned self]      // avoid retain cycle
-    notification, realm in
+    [weak self]      // avoid retain cycle
+    notification, realm -> Void in
     self.tableView.reloadData()
+    return
 }
 ```
 
 ^ In this case, the view controller (self) owns the notification token, which owns the closure, which would otherwise own self if you hadn't marked it as unowned.
+
+^ We could also have used unowned self in the capture list, but weak is safer and many developers tend to use weak even if unowned is appropriate.
 
 ---
 
